@@ -64,6 +64,19 @@ var v;
 for (var i = 0; i < 50; i++) v = s2(120);
 near('smoother converge', v, 120, 0.5);
 
+// candidate heading functions: stay in [0,360) for a spread of inputs
+function inRange(name, v) {
+  if (v >= 0 && v < 360) passed++;
+  else { failed++; console.log('FAIL ' + name + ': ' + v + ' out of [0,360)'); }
+}
+inRange('naive 0', c.naiveHeadingFromAlpha(0, 0));
+inRange('naive 90/90', c.naiveHeadingFromAlpha(90, 90));
+inRange('naive 359', c.naiveHeadingFromAlpha(359, 0));
+eq('naive 90 flat', c.naiveHeadingFromAlpha(90, 0), 270); // 360-90
+inRange('tilt a', c.tiltCompensatedHeading(0, 90, 0));
+inRange('tilt b', c.tiltCompensatedHeading(120, 85, -5));
+inRange('tilt c', c.tiltCompensatedHeading(270, 90, 10));
+
 console.log('');
 console.log(passed + ' passed, ' + failed + ' failed');
 process.exit(failed === 0 ? 0 : 1);

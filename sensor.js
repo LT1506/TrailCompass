@@ -43,8 +43,10 @@ function headingFromEvent(e) {
 // start(callbacks) begins listening. callbacks:
 //   onHeading(magneticDeg, accuracyDeg|null)
 //   onStatus(stateString)   e.g. 'listening', 'denied', 'unsupported', 'no-absolute'
+//   onRaw(rawObj)           OPTIONAL — fired every event with the unprocessed
+//                           sensor fields, for the debug overlay only.
 // Returns a stop() function.
-function start({ onHeading, onStatus }) {
+function start({ onHeading, onStatus, onRaw }) {
   if (typeof DeviceOrientationEvent === 'undefined') {
     onStatus('unsupported');
     return function stop() {};
@@ -57,6 +59,22 @@ function start({ onHeading, onStatus }) {
       : 'deviceorientation'; // iOS provides webkitCompassHeading here
 
   function handler(e) {
+    // Hand the debug overlay the raw fields BEFORE any of our processing, so we
+    // can see exactly what the device reported even if our math returns null.
+    if (onRaw) {
+      onRaw({
+        event: eventName,
+        absolute: e.absolute === true,
+        alpha: e.alpha,
+        beta: e.beta,
+        gamma: e.gamma,
+        webkitCompassHeading:
+          typeof e.webkitCompassHeading === 'number' ? e.webkitCompassHeading : null,
+        webkitCompassAccuracy:
+          typeof e.webkitCompassAccuracy === 'number' ? e.webkitCompassAccuracy : null,
+        screenAngle: screenAngle(),
+      });
+    }
     const heading = headingFromEvent(e);
     if (heading === null) {
       // Got events but no absolute reference — common on desktops/laptops.

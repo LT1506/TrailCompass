@@ -110,3 +110,17 @@ h1 { font-size: 9vmin; margin: 0 0 1vmin; letter-spacing: 0.05em; }
 #ref-flag.is-true { color: var(--accent); }  /* TRUE */
 
 .message { color: var(--warn); font-size: 3.4vmin; min-height: 4vmin; margin: 2vmin 0 0; }
+
+/* Diagnostic overlay — only visible with ?debug=1. Monospace so columns line up
+   and the numbers are easy to read back off the glasses. */
+.debug {
+  margin: 2vmin 0 0;
+  padding: 2vmin;
+  font-family: "Consolas", "SF Mono", monospace;
+  font-size: 3.2vmin;
+  line-height: 1.5;
+  color: var(--accent);
+  text-align: left;
+  white-space: pre;
+}
+.debug .lbl { color: var(--dim); }

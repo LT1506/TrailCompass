@@ -64,6 +64,37 @@ function makeSmoother(alpha) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// HEADING-FROM-ORIENTATION candidates.
+// On Android/Chromium (the glasses) there is no webkitCompassHeading, so we
+// must derive a compass heading from the raw alpha/beta/gamma Euler angles.
+// There are two ways to do it, and which one is right depends on how the device
+// is held. We keep BOTH here so we can compare them against a known-good phone.
+
+// (A) "Flat" shortcut — what v1 shipped. Correct for a phone held flat/upright,
+//     WRONG for a head-tilted device like glasses. Kept for comparison.
+function naiveHeadingFromAlpha(alpha, screenAngleDeg) {
+  return normalize360(360 - alpha + (screenAngleDeg || 0));
+}
+
+// (B) Tilt-compensated heading via the full rotation (the standard MDN method).
+//     This stays correct as the device tilts, which is the glasses' situation.
+//     NOTE: this returns the heading of one particular device axis; if that axis
+//     isn't the glasses' gaze direction we'll see a CONSTANT offset, which the
+//     on-device readings will reveal so we can correct the axis.
+function tiltCompensatedHeading(alpha, beta, gamma) {
+  var rad = Math.PI / 180;
+  var _x = (beta || 0) * rad;  // rotation about X
+  var _y = (gamma || 0) * rad; // rotation about Y
+  var _z = (alpha || 0) * rad; // rotation about Z
+  var cX = Math.cos(_x), cY = Math.cos(_y), cZ = Math.cos(_z);
+  var sX = Math.sin(_x), sY = Math.sin(_y), sZ = Math.sin(_z);
+  // Components of the device's pointing vector projected onto the ground plane.
+  var Vx = -cZ * sY - sZ * sX * cY;
+  var Vy = -sZ * sY + cZ * sX * cY;
+  return normalize360((Math.atan2(Vx, Vy) * 180) / Math.PI);
+}
+
 // Export for node tests. In the browser there is no `module`, so we guard it.
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
@@ -72,5 +103,7 @@ if (typeof module !== 'undefined' && module.exports) {
     cardinal,
     applyDeclination,
     makeSmoother,
+    naiveHeadingFromAlpha,
+    tiltCompensatedHeading,
   };
 }

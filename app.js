@@ -3,7 +3,7 @@
 // It wires:  sensor -> compass math -> DOM,  and  GPS -> declination.
 // Keep logic thin here; anything mathy belongs in compass.js.
 
-var BUILD = 'v1.0.0'; // bump on every deploy so the glasses confirm fresh code
+var BUILD = 'v1.1.0-dbg'; // bump on every deploy so the glasses confirm fresh code
 
 (function () {
   // --- grab elements once ---
@@ -19,8 +19,35 @@ var BUILD = 'v1.0.0'; // bump on every deploy so the glasses confirm fresh code
   var accFlag = document.getElementById('acc-flag');
   var buildFlag = document.getElementById('build-flag');
   var message = document.getElementById('message');
+  var debugEl = document.getElementById('debug');
 
   buildFlag.textContent = BUILD;
+
+  // Debug mode: add ?debug=1 to the URL (easy to type on the glasses).
+  var DEBUG = location.search.indexOf('debug') >= 0 || location.hash.indexOf('debug') >= 0;
+  if (DEBUG) debugEl.classList.remove('hidden');
+
+  // Render the raw sensor values + both candidate headings so we can compare
+  // them against a known-good phone and find the right conversion.
+  function showDebug(raw) {
+    function n(v) { return v === null || v === undefined ? '--' : v.toFixed(1); }
+    var naive = raw.alpha === null || raw.alpha === undefined
+      ? '--'
+      : Math.round(naiveHeadingFromAlpha(raw.alpha, raw.screenAngle));
+    var tilt = raw.alpha === null || raw.alpha === undefined
+      ? '--'
+      : Math.round(tiltCompensatedHeading(raw.alpha, raw.beta, raw.gamma));
+    debugEl.innerHTML =
+      'event   ' + raw.event + '  abs=' + raw.absolute + '\n' +
+      'alpha   ' + n(raw.alpha) + '\n' +
+      'beta    ' + n(raw.beta) + '\n' +
+      'gamma   ' + n(raw.gamma) + '\n' +
+      'wkComp  ' + n(raw.webkitCompassHeading) + '\n' +
+      'screen  ' + raw.screenAngle + '\n' +
+      '------\n' +
+      'A naive ' + naive + '\n' +
+      'B tilt  ' + tilt;
+  }
 
   // --- state ---
   var settings = loadSettings();
@@ -98,7 +125,11 @@ var BUILD = 'v1.0.0'; // bump on every deploy so the glasses confirm fresh code
   function startApp() {
     startScreen.classList.add('hidden');
     compassScreen.classList.remove('hidden');
-    start({ onHeading: onHeading, onStatus: onStatus }); // sensor.js
+    start({
+      onHeading: onHeading,
+      onStatus: onStatus,
+      onRaw: DEBUG ? showDebug : null,
+    }); // sensor.js
     resolveDeclination();
   }
 

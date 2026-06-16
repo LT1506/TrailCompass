@@ -44,6 +44,10 @@
     </div>
 
     <p id="message" class="message"></p>
+
+    <!-- Diagnostic overlay. Hidden unless the URL has ?debug=1. Lets us read the
+         raw sensor values on the glasses to find the heading bug. -->
+    <pre id="debug" class="debug hidden"></pre>
   </section>
 
   <!-- Load order: pure math and helpers first, app.js (the glue) last. -->
