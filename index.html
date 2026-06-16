@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <title>TrailCompass</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- START SCREEN: the tap here is what lets iOS grant sensor permission. -->
+  <section id="start-screen" class="screen">
+    <h1>TrailCompass</h1>
+    <p class="sub">Live hiking compass</p>
+    <button id="start-btn" class="big-btn">Start</button>
+    <p class="hint">Tap to enable the compass &amp; location</p>
+  </section>
+
+  <!-- COMPASS SCREEN: the glanceable HUD. -->
+  <section id="compass-screen" class="screen hidden">
+    <div id="readout">
+      <span id="heading-num">---</span><span id="heading-deg">&deg;</span>
+      <span id="heading-card">--</span>
+    </div>
+
+    <!-- The rose rotates opposite the heading so "N" points to real north. -->
+    <div id="rose-wrap">
+      <div id="rose">
+        <span class="tick n">N</span>
+        <span class="tick e">E</span>
+        <span class="tick s">S</span>
+        <span class="tick w">W</span>
+      </div>
+      <div id="bezel-mark"></div>
+    </div>
+
+    <div id="status">
+      <span id="ref-flag" class="flag">MAG</span>
+      <span id="gps-flag" class="flag dim">GPS --</span>
+      <span id="dec-flag" class="flag dim">DEC --</span>
+      <span id="acc-flag" class="flag dim">ACC --</span>
+      <span id="build-flag" class="flag dim"></span>
+    </div>
+
+    <p id="message" class="message"></p>
+  </section>
+
+  <!-- Load order: pure math and helpers first, app.js (the glue) last. -->
+  <script src="compass.js"></script>
+  <script src="declination.js"></script>
+  <script src="sensor.js"></script>
+  <script src="location.js"></script>
+  <script src="storage.js"></script>
+  <script src="platform.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

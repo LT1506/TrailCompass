@@ -1,0 +1,112 @@
+/* style.css
+   Designed for the Meta Ray-Ban Display: a small, MONOCULAR, flat HUD.
+   Rules of thumb: pure black background (cheap on the display, high contrast),
+   big bright text, very little on screen at once, everything centered so it
+   reads at a glance. No fine detail — it has to be legible while walking. */
+
+:root {
+  --fg: #e8f0ff;       /* soft white */
+  --accent: #6cff9e;   /* trail green */
+  --dim: #7a869a;      /* muted labels */
+  --warn: #ffd166;     /* attention */
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #000;
+  color: var(--fg);
+  font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  overflow: hidden;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4vmin;
+}
+
+.hidden { display: none; }
+
+/* ---- Start screen ---- */
+h1 { font-size: 9vmin; margin: 0 0 1vmin; letter-spacing: 0.05em; }
+.sub { color: var(--dim); margin: 0 0 6vmin; font-size: 4vmin; }
+.big-btn {
+  font-size: 7vmin;
+  padding: 3vmin 12vmin;
+  color: #000;
+  background: var(--accent);
+  border: none;
+  border-radius: 3vmin;
+  font-weight: 700;
+}
+.big-btn:focus { outline: 4px solid var(--fg); } /* visible for pinch/enter */
+.hint { color: var(--dim); margin-top: 5vmin; font-size: 3.4vmin; }
+
+/* ---- Compass screen ---- */
+#readout {
+  font-variant-numeric: tabular-nums; /* digits don't jiggle as they change */
+  line-height: 1;
+  margin-bottom: 3vmin;
+}
+#heading-num { font-size: 22vmin; font-weight: 800; color: var(--accent); }
+#heading-deg { font-size: 10vmin; color: var(--accent); }
+#heading-card {
+  display: block;
+  font-size: 11vmin;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+/* The compass rose. It rotates as a whole; tick letters sit around it. */
+#rose-wrap { position: relative; width: 46vmin; height: 46vmin; margin: 1vmin 0; }
+#rose {
+  position: absolute;
+  inset: 0;
+  border: 0.6vmin solid var(--dim);
+  border-radius: 50%;
+  will-change: transform;
+}
+#bezel-mark { /* the fixed pointer at top = the direction you're facing */
+  position: absolute;
+  top: -1.5vmin;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 2vmin solid transparent;
+  border-right: 2vmin solid transparent;
+  border-bottom: 3vmin solid var(--accent);
+}
+.tick {
+  position: absolute;
+  font-size: 5vmin;
+  font-weight: 700;
+  transform: translate(-50%, -50%);
+}
+.tick.n { top: 8%;  left: 50%; color: var(--warn); }
+.tick.s { top: 92%; left: 50%; }
+.tick.e { top: 50%; left: 92%; }
+.tick.w { top: 50%; left: 8%; }
+
+/* Status line of small flags. */
+#status {
+  display: flex;
+  gap: 2.5vmin;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 3vmin;
+}
+.flag { font-size: 3vmin; font-weight: 700; color: var(--fg); }
+.flag.dim { color: var(--dim); }
+#ref-flag { color: var(--warn); }            /* MAG */
+#ref-flag.is-true { color: var(--accent); }  /* TRUE */
+
+.message { color: var(--warn); font-size: 3.4vmin; min-height: 4vmin; margin: 2vmin 0 0; }
