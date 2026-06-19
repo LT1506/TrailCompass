@@ -33,6 +33,9 @@
         <span class="tick w">W</span>
       </div>
       <div id="bezel-mark"></div>
+      <!-- Home marker: points at the direction of your dropped start point.
+           Hidden until you drop one. -->
+      <div id="home-rotor" class="hidden"><span class="home-mark">&#8962;</span></div>
     </div>
 
     <div id="status">
@@ -42,6 +45,14 @@
       <span id="acc-flag" class="flag dim">ACC --</span>
       <span id="build-flag" class="flag dim"></span>
     </div>
+
+    <!-- Back-track readout: direction + distance home + which way to turn.
+         Hidden until a start point is dropped. -->
+    <div id="backtrack" class="backtrack hidden"></div>
+
+    <!-- One toggling button: drops the start point, then clears it. Focused so a
+         single pinch (= Enter) fires it on the glasses. -->
+    <button id="mark-btn" class="big-btn small">Drop start point</button>
 
     <p id="message" class="message"></p>
 

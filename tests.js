@@ -2,6 +2,7 @@
 // No browser needed: only the math files (compass.js) export to node.
 
 var c = require('./compass.js');
+var g = require('./geo.js');
 
 var passed = 0;
 var failed = 0;
@@ -76,6 +77,20 @@ eq('naive 90 flat', c.naiveHeadingFromAlpha(90, 0), 270); // 360-90
 inRange('tilt a', c.tiltCompensatedHeading(0, 90, 0));
 inRange('tilt b', c.tiltCompensatedHeading(120, 85, -5));
 inRange('tilt c', c.tiltCompensatedHeading(270, 90, 10));
+
+// --- geo.js: distance, bearing, formatting ---
+// One degree of latitude is ~111.2 km.
+near('dist 1deg lat', g.distanceMeters(0, 0, 1, 0), 111195, 50);
+eq('dist same point', g.distanceMeters(40, -87, 40, -87), 0);
+// Bearings from origin.
+near('bearing north', g.bearingTo(0, 0, 1, 0), 0, 0.001);
+near('bearing east', g.bearingTo(0, 0, 0, 1), 90, 0.001);
+near('bearing south', g.bearingTo(1, 0, 0, 0), 180, 0.001);
+near('bearing west', g.bearingTo(0, 1, 0, 0), 270, 0.001);
+// US distance formatting: feet under 1000 ft, else miles.
+eq('fmt 152m', g.formatDistanceUS(152.4), '500 ft');     // 152.4 m = 500 ft
+eq('fmt 1 mile', g.formatDistanceUS(1609.344), '1.00 mi');
+eq('fmt 0m', g.formatDistanceUS(0), '0 ft');
 
 console.log('');
 console.log(passed + ' passed, ' + failed + ' failed');

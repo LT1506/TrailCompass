@@ -25,6 +25,42 @@ function saveSettings(settings) {
   }
 }
 
+// --- Waypoint (the dropped "start point" for back-tracking) ---
+// Saved separately so it survives a reload or crash mid-hike: your way home is
+// not lost if the app restarts on the trail.
+var WAYPOINT_KEY = 'trailcompass.waypoint';
+
+function saveWaypoint(wp) {
+  try {
+    localStorage.setItem(WAYPOINT_KEY, JSON.stringify(wp));
+  } catch (e) {
+    /* not fatal */
+  }
+}
+
+function loadWaypoint() {
+  try {
+    return JSON.parse(localStorage.getItem(WAYPOINT_KEY) || 'null');
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearWaypoint() {
+  try {
+    localStorage.removeItem(WAYPOINT_KEY);
+  } catch (e) {
+    /* not fatal */
+  }
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { loadSettings, saveSettings, DEFAULT_SETTINGS };
+  module.exports = {
+    loadSettings,
+    saveSettings,
+    DEFAULT_SETTINGS,
+    saveWaypoint,
+    loadWaypoint,
+    clearWaypoint,
+  };
 }

@@ -91,6 +91,19 @@ h1 { font-size: 9vmin; margin: 0 0 1vmin; letter-spacing: 0.05em; }
   font-weight: 700;
   transform: translate(-50%, -50%);
 }
+/* Home marker rotor: a full-size layer over the rose. We rotate the whole layer
+   so the marker at its top edge swings around to point at the start direction. */
+#home-rotor { position: absolute; inset: 0; will-change: transform; }
+.home-mark {
+  position: absolute;
+  top: -3vmin;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 6vmin;
+  color: var(--warn);
+  line-height: 1;
+}
+
 .tick.n { top: 8%;  left: 50%; color: var(--warn); }
 .tick.s { top: 92%; left: 50%; }
 .tick.e { top: 50%; left: 92%; }
@@ -108,6 +121,20 @@ h1 { font-size: 9vmin; margin: 0 0 1vmin; letter-spacing: 0.05em; }
 .flag.dim { color: var(--dim); }
 #ref-flag { color: var(--warn); }            /* MAG */
 #ref-flag.is-true { color: var(--accent); }  /* TRUE */
+
+/* Back-track line: BACK 142°  0.42 mi  ← left 30° */
+.backtrack {
+  margin: 2vmin 0 0;
+  font-size: 4.6vmin;
+  font-weight: 700;
+  color: var(--warn);
+  font-variant-numeric: tabular-nums;
+}
+.backtrack.stale { color: var(--dim); }     /* GPS lost — number may be old */
+.backtrack .turn { color: var(--accent); }  /* the live turn cue */
+
+/* The Drop/Clear button is smaller than the Start button. */
+.big-btn.small { font-size: 4.6vmin; padding: 2vmin 6vmin; margin-top: 3vmin; }
 
 .message { color: var(--warn); font-size: 3.4vmin; min-height: 4vmin; margin: 2vmin 0 0; }
 

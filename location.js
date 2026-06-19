@@ -27,6 +27,33 @@ function getFix() {
   });
 }
 
+// watch(onFix, onError) streams position updates continuously (for live
+// back-track distance/bearing). Calls onFix({lat,lon,alt,accuracy}) on each
+// reading. Returns a stop() function that cancels the watch.
+function watch(onFix, onError) {
+  if (!('geolocation' in navigator)) {
+    if (onError) onError(new Error('no-geolocation'));
+    return function stop() {};
+  }
+  var id = navigator.geolocation.watchPosition(
+    function (pos) {
+      onFix({
+        lat: pos.coords.latitude,
+        lon: pos.coords.longitude,
+        alt: pos.coords.altitude,
+        accuracy: pos.coords.accuracy,
+      });
+    },
+    function (err) {
+      if (onError) onError(err);
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 2000 }
+  );
+  return function stop() {
+    navigator.geolocation.clearWatch(id);
+  };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getFix };
+  module.exports = { getFix, watch };
 }

@@ -3,7 +3,7 @@
 // It wires:  sensor -> compass math -> DOM,  and  GPS -> declination.
 // Keep logic thin here; anything mathy belongs in compass.js.
 
-var BUILD = 'v1.1.0-dbg'; // bump on every deploy so the glasses confirm fresh code
+var BUILD = 'v1.2.0'; // bump on every deploy so the glasses confirm fresh code
 
 (function () {
   // --- grab elements once ---
@@ -20,6 +20,9 @@ var BUILD = 'v1.1.0-dbg'; // bump on every deploy so the glasses confirm fresh c
   var buildFlag = document.getElementById('build-flag');
   var message = document.getElementById('message');
   var debugEl = document.getElementById('debug');
+  var markBtn = document.getElementById('mark-btn');
+  var backtrackEl = document.getElementById('backtrack');
+  var homeRotor = document.getElementById('home-rotor');
 
   buildFlag.textContent = BUILD;
 
@@ -55,6 +58,15 @@ var BUILD = 'v1.1.0-dbg'; // bump on every deploy so the glasses confirm fresh c
   var usingTrue = typeof declination === 'number';
   var smooth = makeSmoother(0.2); // circular low-pass; see compass.js
 
+  // --- back-track state ---
+  var currentPos = null;       // latest GPS fix {lat,lon,...}
+  var waypoint = loadWaypoint(); // dropped start point {lat,lon,ts} or null
+  var backBearing = null;      // computed direction (deg) to the start point
+  var backDistText = '';       // formatted distance to the start point
+  var gpsStale = false;        // true once GPS drops after we had a fix
+  var declResolved = false;    // have we looked up declination yet?
+  var lastShown = 0;           // most recent displayed heading (for live re-render)
+
   function setMessage(text) {
     message.textContent = text || '';
   }
@@ -81,6 +93,35 @@ var BUILD = 'v1.1.0-dbg'; // bump on every deploy so the glasses confirm fresh c
       if (accuracyDeg > 25) setMessage('Low accuracy — wave the glasses in a figure-8');
       else setMessage('');
     }
+
+    // Back-track marker + turn cue update with the heading (fast), so the home
+    // arrow and "turn left/right" stay live even between GPS fixes.
+    lastShown = shown;
+    if (waypoint) renderBacktrack(shown);
+  }
+
+  // Draw the home marker on the rose and the BACK line. `shown` is the current
+  // true heading. backBearing/backDistText come from the latest GPS fix.
+  function renderBacktrack(shown) {
+    if (!waypoint || backBearing === null) {
+      homeRotor.classList.add('hidden');
+      return;
+    }
+    homeRotor.classList.remove('hidden');
+    // Place the marker at the start's direction relative to where you face.
+    homeRotor.style.transform = 'rotate(' + (backBearing - shown) + 'deg)';
+
+    var turn = angularDifference(shown, backBearing);
+    var cue;
+    if (Math.abs(turn) <= 8) cue = '• straight ahead';
+    else if (turn > 0) cue = '→ right ' + Math.round(turn) + '°';
+    else cue = '← left ' + Math.round(-turn) + '°';
+
+    backtrackEl.innerHTML =
+      'BACK ' + Math.round(backBearing) + '° · ' + backDistText +
+      ' · <span class="turn">' + cue + '</span>';
+    backtrackEl.classList.toggle('stale', gpsStale);
+    backtrackEl.classList.remove('hidden');
   }
 
   function onStatus(state) {
@@ -90,52 +131,102 @@ var BUILD = 'v1.1.0-dbg'; // bump on every deploy so the glasses confirm fresh c
     else if (state === 'no-absolute') setMessage('No compass reading here (a laptop has no magnetometer). Try on the glasses or a phone.');
   }
 
-  // Get a GPS fix, then look up declination and switch to TRUE north.
-  function resolveDeclination() {
-    // Honor a manual override if the user set one.
+  // Look up declination from a GPS fix (once). Honors a manual override.
+  function resolveDeclinationFrom(fix) {
+    declResolved = true;
     if (typeof settings.manualDeclination === 'number') {
       declination = settings.manualDeclination;
       usingTrue = true;
       decFlag.textContent = 'DEC ' + declination.toFixed(1) + '° (man)';
       return;
     }
-    gpsFlag.textContent = 'GPS...';
-    getFix()
-      .then(function (fix) {
-        gpsFlag.textContent = 'GPS ok';
-        return getDeclination(fix.lat, fix.lon);
-      })
-      .then(function (result) {
-        if (result && typeof result.value === 'number') {
-          declination = result.value;
-          usingTrue = true;
-          decFlag.textContent =
-            'DEC ' + declination.toFixed(1) + '° (' + result.source + ')';
-        } else {
-          decFlag.textContent = 'DEC n/a';
-        }
-      })
-      .catch(function () {
-        gpsFlag.textContent = 'GPS no';
+    getDeclination(fix.lat, fix.lon).then(function (result) {
+      if (result && typeof result.value === 'number') {
+        declination = result.value;
+        usingTrue = true;
+        decFlag.textContent =
+          'DEC ' + declination.toFixed(1) + '° (' + result.source + ')';
+      } else {
         decFlag.textContent = 'DEC n/a';
-        // Stay in MAG mode — still a usable compass, just not map-true.
-      });
+      }
+    });
+  }
+
+  // Recompute bearing + distance from the current position to the start point.
+  function computeBacktrack() {
+    if (!waypoint || !currentPos) return;
+    backBearing = bearingTo(currentPos.lat, currentPos.lon, waypoint.lat, waypoint.lon);
+    backDistText = formatDistanceUS(
+      distanceMeters(currentPos.lat, currentPos.lon, waypoint.lat, waypoint.lon)
+    );
+    renderBacktrack(lastShown);
+  }
+
+  // Every GPS reading.
+  function onFix(fix) {
+    currentPos = fix;
+    gpsStale = false;
+    gpsFlag.textContent = 'GPS ok';
+    if (!declResolved) resolveDeclinationFrom(fix);
+    if (waypoint) computeBacktrack();
+  }
+
+  function onGpsError() {
+    gpsFlag.textContent = 'GPS no';
+    if (!declResolved) decFlag.textContent = 'DEC n/a';
+    if (waypoint && backBearing !== null) {
+      gpsStale = true; // keep last bearing/distance, but flag it as old
+      renderBacktrack(lastShown);
+    }
+  }
+
+  // Reflect the waypoint state in the button label + what's visible.
+  function updateMarkUI() {
+    if (waypoint) {
+      markBtn.textContent = 'Clear start point';
+      computeBacktrack();
+    } else {
+      markBtn.textContent = 'Drop start point';
+      backBearing = null;
+      backDistText = '';
+      backtrackEl.classList.add('hidden');
+      homeRotor.classList.add('hidden');
+    }
+  }
+
+  // Single button that drops the start point, then clears it.
+  function onMark() {
+    if (waypoint) {
+      waypoint = null;
+      clearWaypoint();
+      gpsStale = false;
+      updateMarkUI();
+      setMessage('Start point cleared');
+    } else if (!currentPos) {
+      setMessage('Waiting for GPS — try again in a moment');
+    } else {
+      waypoint = { lat: currentPos.lat, lon: currentPos.lon, ts: Date.now() };
+      saveWaypoint(waypoint);
+      updateMarkUI();
+      setMessage('Start point dropped');
+    }
   }
 
   function startApp() {
     startScreen.classList.add('hidden');
     compassScreen.classList.remove('hidden');
+    markBtn.focus(); // so a single pinch (= Enter) fires Drop/Clear
     start({
       onHeading: onHeading,
       onStatus: onStatus,
       onRaw: DEBUG ? showDebug : null,
     }); // sensor.js
-    resolveDeclination();
+    watch(onFix, onGpsError); // location.js — continuous GPS for back-track
+    updateMarkUI(); // auto-restore a saved start point if one exists
   }
 
   startBtn.addEventListener('click', startApp);
-  // Pinch/Enter on the focused Start button also triggers it (button default),
-  // but wire arrow/enter shortcuts for future screens.
+  markBtn.addEventListener('click', onMark);
   bindKeys({ select: function () {} });
 
   // Register the network-first service worker (offline support on the trail).

@@ -3,12 +3,13 @@
 // have NO reload button; a cache-first worker would pin stale code forever (this
 // bit RangeHUD). So we always try the network, fall back to cache only offline.
 
-var CACHE = 'trailcompass-v1';
+var CACHE = 'trailcompass-v2';
 var ASSETS = [
   './',
   'index.html',
   'style.css',
   'compass.js',
+  'geo.js',
   'declination.js',
   'sensor.js',
   'location.js',
